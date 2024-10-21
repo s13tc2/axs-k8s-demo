@@ -78,6 +78,12 @@ jobs:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
         terraform_wrapper: false
 
+    - name: Debug Environment Variables
+      run: |
+        echo "AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}"
+        echo "BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}"
+        echo "BACKEND_REGION: ${{ vars.BUCKET_REGION }}"
+
     - id: terraform
       name: Terraform Output
       env:
