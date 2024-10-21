@@ -6,6 +6,6 @@ vpc_cidr_block           = "10.0.0.0/21"
 az_count                 = 3
 node_image_type          = "AL2_x86_64"
 node_size                = "t3.medium"
-admin_users              = ["markti"]
+admin_users              = ["mastering-terraform"]
 k8s_namespace            = "app"
 k8s_service_account_name = "fleet-portal"
