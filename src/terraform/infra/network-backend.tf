@@ -45,7 +45,7 @@ resource "aws_nat_gateway" "nat" {
 
   depends_on = [ 
     aws_internet_gateway.main,
-    aws_eip.nat[each.key]
+    # aws_eip.nat[each.key]
     ]
 
 }
