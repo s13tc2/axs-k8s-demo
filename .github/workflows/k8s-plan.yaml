@@ -93,11 +93,12 @@ jobs:
         TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
         TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
         TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
+        TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+        TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
       working-directory: ./src/terraform/k8s
       run: |
         terraform init \
           -backend-config='bucket='$BACKEND_BUCKET_NAME \
           -backend-config='region='$BACKEND_REGION \
           -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-          
         terraform plan

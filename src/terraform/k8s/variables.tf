@@ -36,3 +36,8 @@ variable "alb_controller_role" {
 variable "workload_identity_role" {
   type = string
 }
+variable "secret_key" {
+  type        = string
+  description = "Key for the secret value in the Kubernetes secret"
+  default     = "DB_CONNECTION_STRING"
+}
