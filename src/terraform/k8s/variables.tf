@@ -39,5 +39,4 @@ variable "workload_identity_role" {
 variable "secret_key" {
   type        = string
   description = "Key for the secret value in the Kubernetes secret"
-  default     = "DB_CONNECTION_STRING"
 }
