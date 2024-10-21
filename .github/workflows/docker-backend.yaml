@@ -13,6 +13,7 @@ env:
   DOTNET_WORKING_DIRECTORY: "./src/dotnet/backend/FleetAPI"
   DOCKER_IMAGE_NAME: "fleetops-backend"
   DOCKER_WORKING_DIRECTORY: "./src/dotnet/backend"
+  WORKING_DIRECTORY: "./src/terraform"
 
 jobs:
 
@@ -92,7 +93,8 @@ jobs:
         BACKEND_BUCKET_NAME: ${{ vars.BACKEND_BUCKET_NAME }}
         BACKEND_REGION: ${{ vars.BACKEND_REGION }}
         BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+      # working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       run: |
         terraform init \
           -backend-config='bucket='$BACKEND_BUCKET_NAME \
