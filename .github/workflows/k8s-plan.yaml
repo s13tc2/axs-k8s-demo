@@ -46,14 +46,10 @@ jobs:
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
           
-          kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
-          echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
-          alb_controller_role=$(terraform output -raw alb_controller_role)
-          echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
-          workload_identity_role=$(terraform output -raw workload_identity_role)
-          echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
-          primary_region=$(terraform output -raw primary_region)
-          echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
+          echo "kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)" >> "$GITHUB_OUTPUT"
+          echo "alb_controller_role=$(terraform output -raw alb_controller_role)" >> "$GITHUB_OUTPUT"
+          echo "workload_identity_role=$(terraform output -raw workload_identity_role)" >> "$GITHUB_OUTPUT"
+          echo "primary_region=$(terraform output -raw primary_region)" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
