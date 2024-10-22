@@ -74,12 +74,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
           BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-          AWS_REGION: ${{ needs.infra.outputs.primary_region }} 
           BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
           TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
           TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
-          TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
+          TF_VAR_primary_region: ${{ vars.BUCKET_REGION }}
           TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
           TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
           TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
