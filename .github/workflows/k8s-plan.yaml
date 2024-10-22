@@ -28,7 +28,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
-          
+       
       - id: apply
         name: Terraform Apply
         env:
@@ -40,42 +40,35 @@ jobs:
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
           terraform init \
-            -backend-config='bucket='$BACKEND_BUCKET_NAME \
-            -backend-config='region='$BACKEND_REGION \
+            -backend-config="bucket=$BACKEND_BUCKET_NAME" \
+            -backend-config="region=$BACKEND_REGION" \
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
+
+      - id: get-outputs
+        name: Get Terraform Outputs
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          # Store the values in variables first and clean them
+          CLUSTER_NAME=$(terraform output -raw kubernetes_cluster_name | tr -d '\n')
+          REGION=$(terraform output -raw primary_region | tr -d '\n')
+          ALB_ROLE=$(terraform output -raw alb_controller_role | tr -d '\n')
+          WORKLOAD_ROLE=$(terraform output -raw workload_identity_role | tr -d '\n')
           
-          echo "Debug: Listing all terraform outputs"
-          terraform output
+          # Output the values for debugging (optional)
+          echo "Debug - Cluster Name: $CLUSTER_NAME"
+          echo "Debug - Region: $REGION"
+          echo "Debug - ALB Role: $ALB_ROLE"
+          echo "Debug - Workload Role: $WORKLOAD_ROLE"
           
-          if CLUSTER_NAME=$(terraform output -raw kubernetes_cluster_name 2>/dev/null); then
-            echo "kubernetes_cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
-            echo "Debug: Successfully got cluster name: $CLUSTER_NAME"
-          else
-            echo "Warning: Failed to get kubernetes_cluster_name"
-          fi
-          
-          if REGION=$(terraform output -raw primary_region 2>/dev/null); then
-            echo "primary_region=$REGION" >> $GITHUB_OUTPUT
-            echo "Debug: Successfully got region: $REGION"
-          else
-            echo "Warning: Failed to get primary_region"
-          fi
-          
-          if ALB_ROLE=$(terraform output -raw alb_controller_role 2>/dev/null); then
-            echo "alb_controller_role=$ALB_ROLE" >> $GITHUB_OUTPUT
-            echo "Debug: Successfully got ALB role: $ALB_ROLE"
-          else
-            echo "Warning: Failed to get alb_controller_role"
-          fi
-          
-          if WORKLOAD_ROLE=$(terraform output -raw workload_identity_role 2>/dev/null); then
-            echo "workload_identity_role=$WORKLOAD_ROLE" >> $GITHUB_OUTPUT
-            echo "Debug: Successfully got workload role: $WORKLOAD_ROLE"
-          else
-            echo "Warning: Failed to get workload_identity_role"
-          fi
+          # Set the outputs properly
+          {
+            echo "kubernetes_cluster_name=${CLUSTER_NAME}"
+            echo "primary_region=${REGION}"
+            echo "alb_controller_role=${ALB_ROLE}"
+            echo "workload_identity_role=${WORKLOAD_ROLE}"
+          } >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
