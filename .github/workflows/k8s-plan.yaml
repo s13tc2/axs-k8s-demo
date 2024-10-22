@@ -50,11 +50,9 @@ jobs:
         name: Get Terraform Outputs
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
-          # First, let's see what outputs are available
           echo "Debug: Listing all terraform outputs"
           terraform output
           
-          # Now let's try to get each output individually with error handling
           if CLUSTER_NAME=$(terraform output -raw kubernetes_cluster_name 2>/dev/null); then
             echo "kubernetes_cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
             echo "Debug: Successfully got cluster name: $CLUSTER_NAME"
