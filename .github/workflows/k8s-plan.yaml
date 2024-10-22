@@ -46,24 +46,14 @@ jobs:
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
           
-          # Get outputs and clean them using awk
-          CLUSTER_NAME=$(terraform output -raw kubernetes_cluster_name | awk -F'::debug' '{print $1}')
-          ALB_ROLE=$(terraform output -raw alb_controller_role | awk -F'::debug' '{print $1}')
-          WORKLOAD_ROLE=$(terraform output -raw workload_identity_role | awk -F'::debug' '{print $1}')
-          REGION=$(terraform output -raw primary_region | awk -F'::debug' '{print $1}')
-          
-          # Debug prints
-          echo "Debug - Cleaned values:"
-          echo "Cluster Name: '$CLUSTER_NAME'"
-          echo "ALB Role: '$ALB_ROLE'"
-          echo "Workload Role: '$WORKLOAD_ROLE'"
-          echo "Region: '$REGION'"
-          
-          # Set outputs
-          echo "kubernetes_cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
-          echo "alb_controller_role=$ALB_ROLE" >> "$GITHUB_OUTPUT"
-          echo "workload_identity_role=$WORKLOAD_ROLE" >> "$GITHUB_OUTPUT"
-          echo "primary_region=$REGION" >> "$GITHUB_OUTPUT"
+          kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
+          echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
+          alb_controller_role=$(terraform output -raw alb_controller_role)
+          echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
+          workload_identity_role=$(terraform output -raw workload_identity_role)
+          echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
+          primary_region=$(terraform output -raw primary_region)
+          echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
