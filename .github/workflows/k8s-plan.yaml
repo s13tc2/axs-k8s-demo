@@ -46,26 +46,19 @@ jobs:
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
 
-          CLUSTER_NAME=$(terraform output -raw kubernetes_cluster_name 2>/dev/null | grep -v 'debug' || true)
-          ALB_ROLE=$(terraform output -raw alb_controller_role 2>/dev/null | grep -v 'debug' || true)
-          WORKLOAD_ROLE=$(terraform output -raw workload_identity_role 2>/dev/null | grep -v 'debug' || true)
-          REGION=$(terraform output -raw primary_region 2>/dev/null | grep -v 'debug' || true)
-          
-          CLUSTER_NAME=$(echo "$CLUSTER_NAME" | tr -d '\n' | tr -d '"' | sed 's/::debug.*$//')
-          ALB_ROLE=$(echo "$ALB_ROLE" | tr -d '\n' | tr -d '"' | sed 's/::debug.*$//')
-          WORKLOAD_ROLE=$(echo "$WORKLOAD_ROLE" | tr -d '\n' | tr -d '"' | sed 's/::debug.*$//')
-          REGION=$(echo "$REGION" | tr -d '\n' | tr -d '"' | sed 's/::debug.*$//')
-          
-          echo "Debug - Raw values:"
-          echo "Cluster Name: '$CLUSTER_NAME'"
-          echo "ALB Role: '$ALB_ROLE'"
-          echo "Workload Role: '$WORKLOAD_ROLE'"
-          echo "Region: '$REGION'"
-          
-          echo "kubernetes_cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
-          echo "alb_controller_role=$ALB_ROLE" >> "$GITHUB_OUTPUT"
-          echo "workload_identity_role=$WORKLOAD_ROLE" >> "$GITHUB_OUTPUT"
-          echo "primary_region=$REGION" >> "$GITHUB_OUTPUT"
+          terraform output -raw kubernetes_cluster_name
+          terraform output -raw alb_controller_role
+          terraform output -raw workload_identity_role
+          terraform output -raw primary_region
+
+          kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
+          echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
+          alb_controller_role=$(terraform output -raw alb_controller_role)
+          echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
+          workload_identity_role=$(terraform output -raw workload_identity_role)
+          echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
+          primary_region=$(terraform output -raw primary_region)
+          echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
