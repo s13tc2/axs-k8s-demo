@@ -45,14 +45,10 @@ jobs:
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
-          cluster_name=$(terraform output -raw kubernetes_cluster_name | sed 's/::debug::.*$//')
-          echo "kubernetes_cluster_name=$cluster_name" >> "$GITHUB_OUTPUT"
-          alb_role=$(terraform output -raw alb_controller_role | sed 's/::debug::.*$//')
-          echo "alb_controller_role=$alb_role" >> "$GITHUB_OUTPUT"
-          workload_role=$(terraform output -raw workload_identity_role | sed 's/::debug::.*$//')
-          echo "workload_identity_role=$workload_role" >> "$GITHUB_OUTPUT"
-          region=$(terraform output -raw primary_region | sed 's/::debug::.*$//')
-          echo "primary_region=$region" >> "$GITHUB_OUTPUT"
+          echo "kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          echo "alb_controller_role=$(terraform output -raw alb_controller_role | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          echo "workload_identity_role=$(terraform output -raw workload_identity_role | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
+          echo "primary_region=$(terraform output -raw primary_region | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
