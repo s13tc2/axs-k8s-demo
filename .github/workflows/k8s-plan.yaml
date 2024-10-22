@@ -63,6 +63,13 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Debug Outputs
+        run: |
+          echo "Cluster Name: ${{ needs.infra.outputs.kubernetes_cluster_name }}"
+          echo "Primary Region: ${{ needs.infra.outputs.primary_region }}"
+          echo "ALB Controller Role: ${{ needs.infra.outputs.alb_controller_role }}"
+          echo "Workload Identity Role: ${{ needs.infra.outputs.workload_identity_role }}"
           
       - id: plan
         name: Terraform Plan
