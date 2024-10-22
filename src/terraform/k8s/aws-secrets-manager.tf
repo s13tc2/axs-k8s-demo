@@ -1,5 +1,4 @@
 resource "helm_release" "csi_secrets_store" {
-
   name       = "csi-secrets-store"
   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
   chart      = "secrets-store-csi-driver"
@@ -10,7 +9,13 @@ resource "helm_release" "csi_secrets_store" {
     value = "true"
   }
 
+  # Add this section if CRDs need to be installed
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
 }
+
 
 
 resource "helm_release" "aws_secrets_provider" {
@@ -29,6 +34,10 @@ locals {
 }
 
 resource "kubernetes_manifest" "secret_provider_class" {
+  depends_on = [
+    helm_release.csi_secrets_store,
+    helm_release.aws_secrets_provider
+  ]
 
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
@@ -62,5 +71,4 @@ resource "kubernetes_manifest" "secret_provider_class" {
       ]
     }
   }
-
 }
