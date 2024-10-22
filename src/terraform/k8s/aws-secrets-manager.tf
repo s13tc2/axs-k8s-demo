@@ -9,13 +9,11 @@ resource "helm_release" "csi_secrets_store" {
     value = "true"
   }
 
-  # Add this section if CRDs need to be installed
   set {
     name  = "installCRDs"
     value = "true"
   }
 }
-
 
 
 resource "helm_release" "aws_secrets_provider" {
