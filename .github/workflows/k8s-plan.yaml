@@ -122,12 +122,3 @@ jobs:
             -backend-config="region=$BACKEND_REGION" \
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
           
-          # Set AWS provider configuration explicitly
-          cat > provider_override.tf <<EOF
-          provider "aws" {
-            region = "$AWS_REGION"
-          }
-          EOF
-          
-          # Run plan
-          terraform plan
