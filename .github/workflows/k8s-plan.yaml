@@ -14,10 +14,10 @@ jobs:
   infra:
     runs-on: ubuntu-latest
     outputs:
-      kubernetes_cluster_name: ${{ steps.get-outputs.outputs.kubernetes_cluster_name }}
-      primary_region: ${{ steps.get-outputs.outputs.primary_region }}
-      alb_controller_role: ${{ steps.get-outputs.outputs.alb_controller_role }}
-      workload_identity_role: ${{ steps.get-outputs.outputs.workload_identity_role }}
+      kubernetes_cluster_name: ${{ steps.apply.outputs.kubernetes_cluster_name }}
+      primary_region: ${{ steps.apply.outputs.primary_region }}
+      alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
+      workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
     environment:
       name: ${{ inputs.environment }}
     steps:
@@ -28,7 +28,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
-      
+          
       - id: apply
         name: Terraform Apply
         env:
@@ -40,16 +40,12 @@ jobs:
         working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
         run: |
           terraform init \
-            -backend-config="bucket=$BACKEND_BUCKET_NAME" \
-            -backend-config="region=$BACKEND_REGION" \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
           terraform apply -target "random_shuffle.az" -auto-approve
           terraform apply -auto-approve
-
-      - id: get-outputs
-        name: Get Terraform Outputs
-        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-        run: |
+          
           echo "Debug: Listing all terraform outputs"
           terraform output
           
@@ -103,7 +99,7 @@ jobs:
           echo "Region: ${{ needs.infra.outputs.primary_region }}"
           echo "ALB Role: ${{ needs.infra.outputs.alb_controller_role }}"
           echo "Workload Role: ${{ needs.infra.outputs.workload_identity_role }}"
-      
+          
       - id: plan
         name: Terraform Plan
         env:
@@ -115,7 +111,7 @@ jobs:
           TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
           TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
           TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
-          TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
+          TF_VAR_primary_region: ${{ needs.apply.outputs.primary_region  }}
           TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
           TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
           TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
@@ -123,7 +119,7 @@ jobs:
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
-            -backend-config="bucket=$BACKEND_BUCKET_NAME" \
-            -backend-config="region=$BACKEND_REGION" \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
           terraform plan
