@@ -30,25 +30,54 @@ jobs:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           
       - id: apply
-        name: Terraform Apply
-        env:
-          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
-          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
-        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-        run: |
-          terraform init \
-            -backend-config='bucket='$BACKEND_BUCKET_NAME \
-            -backend-config='region='$BACKEND_REGION \
-            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
-          terraform apply -target "random_shuffle.az" -auto-approve
-          terraform apply -auto-approve
-          echo "kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
-          echo "alb_controller_role=$(terraform output -raw alb_controller_role | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
-          echo "workload_identity_role=$(terraform output -raw workload_identity_role | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
-          echo "primary_region=$(terraform output -raw primary_region | tr -d '\n' | tr -d '"')" >> "$GITHUB_OUTPUT"
+  name: Terraform Apply
+  env:
+    AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+    BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+    BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
+    working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+    run: |
+      # Initialize Terraform
+      terraform init \
+        -backend-config="bucket=$BACKEND_BUCKET_NAME" \
+        -backend-config="region=$BACKEND_REGION" \
+        -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+      
+      # Apply terraform in stages
+      terraform apply -target "random_shuffle.az" -auto-approve
+      terraform apply -auto-approve
+      
+      # Function to safely get and clean terraform outputs
+      get_output() {
+        terraform output -raw "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+      }
+      
+      # Get and store all outputs
+      CLUSTER_NAME=$(get_output "kubernetes_cluster_name")
+      ALB_ROLE=$(get_output "alb_controller_role")
+      WORKLOAD_ROLE=$(get_output "workload_identity_role")
+      REGION=$(get_output "primary_region")
+      
+      # Debug prints
+      echo "Debug - Output values:"
+      echo "Cluster Name: '$CLUSTER_NAME'"
+      echo "ALB Role: '$ALB_ROLE'"
+      echo "Workload Role: '$WORKLOAD_ROLE'"
+      echo "Region: '$REGION'"
+      
+      # Set the outputs with proper spacing
+      {
+        echo "kubernetes_cluster_name=$CLUSTER_NAME"
+        echo "alb_controller_role=$ALB_ROLE"
+        echo "workload_identity_role=$WORKLOAD_ROLE"
+        echo "primary_region=$REGION"
+      } >> "$GITHUB_OUTPUT"
+      
+      # Verify outputs were set correctly
+      echo "Verification - Contents of GITHUB_OUTPUT:"
+      cat "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
@@ -63,13 +92,6 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
-
-      - name: Debug Outputs
-        run: |
-          echo "Cluster Name: ${{ needs.infra.outputs.kubernetes_cluster_name }}"
-          echo "Primary Region: ${{ needs.infra.outputs.primary_region }}"
-          echo "ALB Controller Role: ${{ needs.infra.outputs.alb_controller_role }}"
-          echo "Workload Identity Role: ${{ needs.infra.outputs.workload_identity_role }}"
           
       - id: plan
         name: Terraform Plan
