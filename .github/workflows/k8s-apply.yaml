@@ -161,6 +161,7 @@ jobs:
           TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
           TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
           TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
+          TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -189,7 +190,9 @@ jobs:
 
       - name: Describe Ingress
         run: |
-          kubectl describe ingress <your-ingress-name> -n ${{ steps.apply.outputs.k8s_namespace }}
+          kubectl describe ingress ${{ steps.apply.outputs.ingress_controller_namespace }} -n ${{ steps.apply.outputs.k8s_namespace }}
+        env:
+          INGRESS_NAME: 'fleet-portal-ingress'
 
       - name: Get Events
         run: |
