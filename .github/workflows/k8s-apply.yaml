@@ -227,9 +227,11 @@ jobs:
 
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl run test-pod --image=busybox --restart=Never -- /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" > output.log || exit 1
+          kubectl run test-pod --image=busybox --restart=Never -- sleep 300
+          kubectl exec test-pod -- wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api > output.log || exit 1
           cat output.log
           kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
+
 
       - name: Test Connectivity to fleet-portal-service
         run: |
@@ -312,9 +314,11 @@ jobs:
 
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl run test-pod --image=busybox --restart=Never -- /bin/sh -c "wget -S -O - http://fleet-api-service.app.svc.cluster.local:80/api" > output.log || exit 1
+          kubectl run test-pod --image=busybox --restart=Never -- sleep 300
+          kubectl exec test-pod -- wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api > output.log || exit 1
           cat output.log
-          kubectl delete pod test-pod --ignore-not-found=true
+          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
+
 
       - name: Test Connectivity to fleet-portal-service
         run: |
