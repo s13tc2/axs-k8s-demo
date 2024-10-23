@@ -5,8 +5,16 @@ resource "helm_release" "csi_secrets_store" {
   chart      = "secrets-store-csi-driver"
   namespace  = "kube-system"
   
+  # Ensure CRDs are installed first
+  skip_crds  = false
+  
   set {
     name  = "syncSecret.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "enableSecretRotation"
     value = "true"
   }
 }
@@ -19,19 +27,21 @@ resource "helm_release" "aws_secrets_provider" {
   namespace  = "kube-system"
   
   depends_on = [helm_release.csi_secrets_store]
-}
 
-# Wait for the CRD to be available
-resource "time_sleep" "wait_for_crds" {
-  depends_on = [helm_release.aws_secrets_provider]
-
-  create_duration = "30s"
-}
-
-locals {
-  secrets = {
-    "fleet-portal-dev-connection-string" = "DB_CONNECTION_STRING"
+  set {
+    name  = "installCRDs"
+    value = "true"
   }
+}
+
+# Wait for CRDs to be available
+resource "time_sleep" "wait_for_crds" {
+  depends_on = [
+    helm_release.csi_secrets_store,
+    helm_release.aws_secrets_provider
+  ]
+
+  create_duration = "60s"
 }
 
 # Create the SecretProviderClass
