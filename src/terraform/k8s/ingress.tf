@@ -3,16 +3,17 @@ resource "kubernetes_ingress_v1" "ingress" {
     name      = "${local.web_app_name}-ingress"
     namespace = var.k8s_namespace
     annotations = {
+      # You can remove this annotation if `ingressClassName` is set
       "kubernetes.io/ingress.class" = "nginx"
     }
   }
   spec {
+    ingress_class_name = "nginx"  # Add this line
     rule {
       http {
         path {
           path      = "/"
           path_type = "Prefix"
-
           backend {
             service {
               name = kubernetes_service.web_app.metadata[0].name
@@ -25,7 +26,6 @@ resource "kubernetes_ingress_v1" "ingress" {
         path {
           path      = "/api"
           path_type = "Prefix"
-
           backend {
             service {
               name = kubernetes_service.web_api.metadata[0].name

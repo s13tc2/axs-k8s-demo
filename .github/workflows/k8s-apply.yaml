@@ -177,44 +177,76 @@ jobs:
       # Debugging Steps Start Here
       - name: Get Pods Status
         run: |
-          kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -o wide
-
+          kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
 
       - name: Get Services
         run: |
-          kubectl get services -n ${{ steps.apply.outputs.k8s_namespace }}
+          kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
+
+      - name: Get Endpoints
+        run: |
+          kubectl get endpoints -n ${{ steps.Apply.outputs.k8s_namespace }}
 
       - name: Get Ingresses
         run: |
-          kubectl get ingress -n ${{ steps.apply.outputs.k8s_namespace }}
+          kubectl get ingress -n ${{ steps.Apply.outputs.k8s_namespace }}
 
       - name: Describe Ingress
         run: |
-          kubectl describe ingress ${{ steps.apply.outputs.ingress_controller_namespace }} -n ${{ steps.apply.outputs.k8s_namespace }}
+          kubectl describe ingress $INGRESS_NAME -n ${{ steps.Apply.outputs.k8s_namespace }}
         env:
-          INGRESS_NAME: 'fleet-portal-ingress'
+          INGRESS_NAME: ${{ steps.Apply.outputs.ingress_name }}
+
+      - name: Get Ingress Classes
+        run: |
+          kubectl get ingressclass
+
+      - name: Describe Ingress Class
+        run: |
+          kubectl describe ingressclass nginx
+
+      - name: Get Cluster Roles
+        run: |
+          kubectl get clusterrole ingress-nginx -o yaml
+
+      - name: Get Cluster Role Bindings
+        run: |
+          kubectl get clusterrolebinding ingress-nginx -o yaml
+
+      - name: Get Nginx Ingress Controller Deployment
+        run: |
+          kubectl get deployment ingress-nginx-controller -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -o yaml
+
+      - name: Describe Nginx Ingress Controller Deployment
+        run: |
+          kubectl describe deployment ingress-nginx-controller -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
+
+      - name: Get Network Policies
+        run: |
+          kubectl get networkpolicy -A -o yaml
 
       - name: Get Events
         run: |
-          kubectl get events -n ${{ steps.apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+          kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
 
       - name: Get Application Pod Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -l app=<your-app-label> -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=your-app-label -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for pod: $pod"
-            kubectl logs $pod -n ${{ steps.apply.outputs.k8s_namespace }}
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
           done
 
       - name: Get Nginx Ingress Controller Pods
         run: |
-          kubectl get pods -n ingress-nginx
+          kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
 
       - name: Get Nginx Ingress Controller Logs
         run: |
-          for pod in $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ingress-nginx
+            kubectl logs $pod -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
           done
+
 
       - name: Setup eksctl
         run: |
