@@ -112,6 +112,12 @@ jobs:
           ./get_helm.sh
           helm version
 
+      - name: Add Helm Repositories
+        run: |
+          helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+          helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
+          helm repo update
+
       - name: Install/Upgrade Secrets Store CSI Driver
         run: |
           helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
@@ -119,6 +125,11 @@ jobs:
             --create-namespace \
             --set syncSecret.enabled=true \
             --set installCRDs=true
+        
+      - name: Wait for CRDs to be Established
+        run: |
+          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
+          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
 
       - name: Uninstall Existing Helm Releases
         run: |
