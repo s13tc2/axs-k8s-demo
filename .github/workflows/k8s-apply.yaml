@@ -86,15 +86,6 @@ jobs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
-    
-    - id: debug-outputs
-        name: Debug Outputs
-        run: |
-          echo "Debug: Checking received outputs"
-          echo "Cluster Name: ${{ needs.infra.outputs.kubernetes_cluster_name }}"
-          echo "Region: ${{ needs.infra.outputs.primary_region }}"
-          echo "ALB Role: ${{ needs.infra.outputs.alb_controller_role }}"
-          echo "Workload Role: ${{ needs.infra.outputs.workload_identity_role }}"
 
     - id: Apply
       name: Terraform Apply
@@ -120,12 +111,8 @@ jobs:
           -backend-config='bucket='$BACKEND_BUCKET_NAME \
           -backend-config='region='$BACKEND_REGION \
           -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-
-        echo "Planning Terraform changes..."
-        terraform plan -out=tfplan
-        
-        echo "Applying Terraform changes..."
-        terraform apply tfplan
+          
+        terraform apply -auto-approve
 
     - name: Setup eksctl
       run: |
