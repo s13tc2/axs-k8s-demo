@@ -112,6 +112,14 @@ jobs:
           ./get_helm.sh
           helm version
 
+      - name: Install/Upgrade Secrets Store CSI Driver
+        run: |
+          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+            --namespace kube-system \
+            --create-namespace \
+            --set syncSecret.enabled=true \
+            --set installCRDs=true
+
       - name: Uninstall Existing Helm Releases
         run: |
           helm uninstall csi-secrets-store -n kube-system || true
