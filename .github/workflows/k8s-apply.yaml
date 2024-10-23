@@ -22,7 +22,6 @@ jobs:
       admin_group: ${{ steps.apply.outputs.admin_group }}
       alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
-      k8s_namespace: ${{ steps.apply.outputs.k8s_namespace }} 
 
     environment:
       name: ${{ inputs.environment }}
@@ -72,9 +71,6 @@ jobs:
           admin_group=$(terraform output -raw admin_group_arn)
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
-          k8s_namespace=$(terraform output -raw k8s_namespace)
-          echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
-          
   k8s:
     runs-on: ubuntu-latest
     needs: infra
@@ -164,6 +160,7 @@ jobs:
           TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
           TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
           TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
+          TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -173,33 +170,36 @@ jobs:
               
           terraform apply -auto-approve
 
+          k8s_namespace=$(terraform output -raw k8s_namespace)
+          echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
+
       # Debugging Steps Start Here
       - name: Get Pods Status
         run: |
-          kubectl get pods -n ${{ needs.infra.outputs.k8s_namespace }} -o wide
+          kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -o wide
 
 
       - name: Get Services
         run: |
-          kubectl get services -n ${{ needs.infra.outputs.k8s_namespace }}
+          kubectl get services -n ${{ steps.infra.outputs.k8s_namespace }}
 
       - name: Get Ingresses
         run: |
-          kubectl get ingress -n ${{ needs.infra.outputs.k8s_namespace }}
+          kubectl get ingress -n ${{ steps.infra.outputs.k8s_namespace }}
 
       - name: Describe Ingress
         run: |
-          kubectl describe ingress <your-ingress-name> -n ${{ needs.infra.outputs.k8s_namespace }}
+          kubectl describe ingress <your-ingress-name> -n ${{ steps.infra.outputs.k8s_namespace }}
 
       - name: Get Events
         run: |
-          kubectl get events -n ${{ needs.infra.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+          kubectl get events -n ${{ steps.infra.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
 
       - name: Get Application Pod Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ needs.infra.outputs.k8s_namespace }} -l app=<your-app-label> -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.infra.outputs.k8s_namespace }} -l app=<your-app-label> -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for pod: $pod"
-            kubectl logs $pod -n ${{ needs.infra.outputs.k8s_namespace }}
+            kubectl logs $pod -n ${{ steps.infra.outputs.k8s_namespace }}
           done
 
       - name: Get Nginx Ingress Controller Pods
