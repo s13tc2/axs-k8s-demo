@@ -130,51 +130,17 @@ jobs:
         run: |
           helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
             --namespace kube-system
-        
+          
       - name: Wait for CRDs to be Established
         run: |
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
 
-      - name: Uninstall Existing Helm Releases
-        run: |
-          helm uninstall csi-secrets-store -n kube-system || true
-          helm uninstall secrets-provider-aws -n kube-system || true
-
-      # - name: Update kubeconfig for EKS Cluster
+      # Ensure that you do NOT uninstall the Helm releases here
+      # - name: Uninstall Existing Helm Releases
       #   run: |
-      #     aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
-
-      # - name: Install Helm
-      #   run: |
-      #     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      #     chmod +x get_helm.sh
-      #     ./get_helm.sh
-      #     helm version
-
-      # - name: Add Helm Repositories
-      #   run: |
-      #     helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
-      #     helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
-      #     helm repo update
-
-      # - name: Install/Upgrade Secrets Store CSI Driver
-      #   run: |
-      #     helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
-      #       --namespace kube-system \
-      #       --create-namespace \
-      #       --set syncSecret.enabled=true \
-      #       --set installCRDs=true
-
-      # - name: Install/Upgrade AWS Secrets Provider
-      #   run: |
-      #     helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
-      #       --namespace kube-system
-
-      # - name: Wait for CRDs to be Established
-      #   run: |
-      #     kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
-      #     kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
+      #     helm uninstall csi-secrets-store -n kube-system || true
+      #     helm uninstall secrets-provider-aws -n kube-system || true
 
       - id: Apply
         name: Terraform Apply
@@ -200,8 +166,47 @@ jobs:
             -backend-config='bucket='$BACKEND_BUCKET_NAME \
             -backend-config='region='$BACKEND_REGION \
             -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-            
+              
           terraform apply -auto-approve
+
+      # Debugging Steps Start Here
+      - name: Get Pods Status
+        run: |
+          kubectl get pods -n ${{ vars.K8S_NAMESPACE }} -o wide
+
+      - name: Get Services
+        run: |
+          kubectl get services -n ${{ vars.K8S_NAMESPACE }}
+
+      - name: Get Ingresses
+        run: |
+          kubectl get ingress -n ${{ vars.K8S_NAMESPACE }}
+
+      - name: Describe Ingress
+        run: |
+          kubectl describe ingress <your-ingress-name> -n ${{ vars.K8S_NAMESPACE }}
+
+      - name: Get Events
+        run: |
+          kubectl get events -n ${{ vars.K8S_NAMESPACE }} --sort-by='.lastTimestamp'
+
+      - name: Get Application Pod Logs
+        run: |
+          for pod in $(kubectl get pods -n ${{ vars.K8S_NAMESPACE }} -l app=<your-app-label> -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for pod: $pod"
+            kubectl logs $pod -n ${{ vars.K8S_NAMESPACE }}
+          done
+
+      - name: Get Nginx Ingress Controller Pods
+        run: |
+          kubectl get pods -n ingress-nginx
+
+      - name: Get Nginx Ingress Controller Logs
+        run: |
+          for pod in $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for Nginx Ingress Controller pod: $pod"
+            kubectl logs $pod -n ingress-nginx
+          done
 
       - name: Setup eksctl
         run: |
