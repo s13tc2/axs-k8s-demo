@@ -1,12 +1,12 @@
+# phase1-csi-installation.tf
+
 # Install the CSI Secrets Store Driver
 resource "helm_release" "csi_secrets_store" {
   name       = "csi-secrets-store"
   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
   chart      = "secrets-store-csi-driver"
   namespace  = "kube-system"
-  
-  # Ensure CRDs are installed first
-  skip_crds  = false
+  version    = "1.4.6"  # Specify the version explicitly
   
   set {
     name  = "syncSecret.enabled"
@@ -25,26 +25,11 @@ resource "helm_release" "aws_secrets_provider" {
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
   namespace  = "kube-system"
+  version    = "0.3.10"  # Specify the version explicitly
   
   depends_on = [helm_release.csi_secrets_store]
-
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
 }
 
-# Wait for CRDs to be available
-resource "time_sleep" "wait_for_crds" {
-  depends_on = [
-    helm_release.csi_secrets_store,
-    helm_release.aws_secrets_provider
-  ]
-
-  create_duration = "60s"
-}
-
-# Create the SecretProviderClass
 resource "kubernetes_manifest" "secret_provider_class" {
   manifest = {
     apiVersion = "secrets-store.csi.x-k8s.io/v1"
@@ -78,10 +63,4 @@ resource "kubernetes_manifest" "secret_provider_class" {
       ]
     }
   }
-
-  depends_on = [
-    helm_release.csi_secrets_store,
-    helm_release.aws_secrets_provider,
-    time_sleep.wait_for_crds
-  ]
 }
