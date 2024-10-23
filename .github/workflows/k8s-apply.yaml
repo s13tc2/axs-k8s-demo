@@ -257,11 +257,11 @@ jobs:
             kubectl logs $pod -n ingress-nginx
           done
 
-      - name: Check Ingress Controller Logs for Errors
+      - name: Get Nginx Ingress Controller Logs
         run: |
           for pod in $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Errors and Warnings in Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ingress-nginx | grep -i "error\|warning"
+            echo "Logs for Nginx Ingress Controller pod: $pod"
+            kubectl logs $pod -n ingress-nginx -c controller
           done
 
       - name: Validate Endpoints After Changes
