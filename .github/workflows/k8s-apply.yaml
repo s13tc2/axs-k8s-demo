@@ -107,8 +107,6 @@ jobs:
           -backend-config='bucket='$BACKEND_BUCKET_NAME \
           -backend-config='region='$BACKEND_REGION \
           -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-          
-        terraform apply -auto-approve
 
         echo "Planning Terraform changes..."
         terraform plan -out=tfplan
