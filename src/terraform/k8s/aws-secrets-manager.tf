@@ -1,29 +1,29 @@
-resource "helm_release" "csi_secrets_store" {
+# resource "helm_release" "csi_secrets_store" {
 
-  name       = "csi-secrets-store"
-  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
-  chart      = "secrets-store-csi-driver"
-  namespace  = "kube-system"
+#   name       = "csi-secrets-store"
+#   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+#   chart      = "secrets-store-csi-driver"
+#   namespace  = "kube-system"
 
-  set {
-    name  = "syncSecret.enabled"
-    value = "true"
-  }
+#   set {
+#     name  = "syncSecret.enabled"
+#     value = "true"
+#   }
 
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
+#   set {
+#     name  = "installCRDs"
+#     value = "true"
+#   }
 
-}
+# }
 
 
-resource "helm_release" "aws_secrets_provider" {
+# resource "helm_release" "aws_secrets_provider" {
 
-  name       = "secrets-provider-aws"
-  repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
-  chart      = "secrets-store-csi-driver-provider-aws"
-  namespace  = "kube-system"
+#   name       = "secrets-provider-aws"
+#   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
+#   chart      = "secrets-store-csi-driver-provider-aws"
+#   namespace  = "kube-system"
 
 }
 
@@ -66,9 +66,4 @@ resource "kubernetes_manifest" "secret_provider_class" {
       ]
     }
   }
-
-  depends_on = [
-    helm_release.csi_secrets_store,
-    helm_release.aws_secrets_provider
-  ]
 }
