@@ -257,13 +257,6 @@ jobs:
             kubectl logs $pod -n ingress-nginx
           done
 
-      - name: Get Nginx Ingress Controller Logs
-        run: |
-          for pod in $(kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Logs for Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ingress-nginx -c controller
-          done
-
       - name: Validate Endpoints After Changes
         run: |
           kubectl get endpoints -n ${{ steps.apply.outputs.k8s_namespace }}
