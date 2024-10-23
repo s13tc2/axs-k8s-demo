@@ -230,7 +230,8 @@ jobs:
         run: |
           kubectl logs -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
 
-      # Test Connectivity to fleet-api-service
+
+
       - name: Test Connectivity to fleet-api-service
         run: |
           TIMESTAMP=$(date +%s)
@@ -252,46 +253,14 @@ jobs:
           kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
 
 
-      # - name: Test Connectivity to fleet-api-service
-      #   run: |
-      #     TIMESTAMP=$(date +%s)
-      #     kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
-      #     /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
-      #     kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
-
-      # # Ensure the fleet-api service endpoints are correctly mapped
-      # - name: Check fleet-api Service Endpoints
-      #   run: |
-      #     kubectl get endpoints fleet-api-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
-
-      # # Test the root endpoint (/) for fleet-api-service
-      # - name: Test Root Endpoint for fleet-api-service
-      #   run: |
-      #     kubectl run test-pod --image=busybox --restart=Never -- \
-      #     /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
-      #     kubectl delete pod test-pod --force --grace-period=0 || exit 1
-
-      # Verify the fleet-api service can serve the /api endpoint through the ingress
-      - name: Test /api Endpoint for fleet-api-service
-        run: |
-          kubectl run test-pod --image=busybox --restart=Never -- \
-          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
-          kubectl delete pod test-pod --force --grace-period=0 || exit 1
-
-
-      - name: Test Connectivity to fleet-api-service
-        run: |
-          kubectl run test-pod --image=busybox --restart=Never -- sleep 300
-          kubectl exec test-pod -- wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api > output.log || exit 1
-          cat output.log
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
-
 
       - name: Test Connectivity to fleet-portal-service
         run: |
-          kubectl run test-pod --image=busybox --restart=Never -- /bin/sh -c "wget -S -O - http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" > output.log || exit 1
+          TIMESTAMP=$(date +%s)
+          kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- 
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" > output.log || exit 1
           cat output.log
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
+          kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
 
 
 
