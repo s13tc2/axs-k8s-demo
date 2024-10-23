@@ -240,28 +240,10 @@ jobs:
 
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
-          kubectl run test-pod --image=busybox --restart=Never -- sleep 300
-          kubectl wait --for=condition=Ready pod/test-pod --timeout=60s
-          kubectl exec test-pod -- wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api > output.log || exit 1
-          cat output.log
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
-
-      - name: Test Connectivity to fleet-portal-service
-        run: |
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
-          kubectl run test-pod --image=busybox --restart=Never -- sleep 300
-          kubectl wait --for=condition=Ready pod/test-pod --timeout=60s
-          kubectl exec test-pod -- wget -S -O - http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80 > output.log || exit 1
-          cat output.log
-          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
-
-      # - name: Test Connectivity to fleet-api-service
-      #   run: |
-      #     TIMESTAMP=$(date +%s)
-      #     kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
-      #     /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
-      #     kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
+          TIMESTAMP=$(date +%s)
+          kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
 
       # Ensure the fleet-api service endpoints are correctly mapped
       - name: Check fleet-api Service Endpoints
