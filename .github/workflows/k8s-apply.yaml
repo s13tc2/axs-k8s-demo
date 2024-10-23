@@ -125,6 +125,11 @@ jobs:
             --create-namespace \
             --set syncSecret.enabled=true \
             --set installCRDs=true
+
+      - name: Install/Upgrade AWS Secrets Provider
+        run: |
+          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
+            --namespace kube-system
         
       - name: Wait for CRDs to be Established
         run: |
