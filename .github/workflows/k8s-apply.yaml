@@ -230,13 +230,20 @@ jobs:
         run: |
           kubectl logs -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
 
-      # Test if the /api endpoint is correctly handled by the application inside the fleet-api pods
-      - name: Test /api Endpoint Directly in fleet-api Pods
+      # # Test if the /api endpoint is correctly handled by the application inside the fleet-api pods
+      # - name: Test /api Endpoint Directly in fleet-api Pods
+      #   run: |
+      #     for pod in $(kubectl get pods -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} -o jsonpath='{.items[*].metadata.name}'); do
+      #       echo "Testing /api endpoint inside pod: $pod"
+      #       kubectl exec -it $pod -n ${{ steps.Apply.outputs.k8s_namespace }} -- curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api || exit 1
+      #     done
+
+      - name: Test /api Endpoint for fleet-api-service from Test Pod
         run: |
-          for pod in $(kubectl get pods -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Testing /api endpoint inside pod: $pod"
-            kubectl exec -it $pod -n ${{ steps.Apply.outputs.k8s_namespace }} -- curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api || exit 1
-          done
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
+
 
       # Ensure the fleet-api service endpoints are correctly mapped
       - name: Check fleet-api Service Endpoints
