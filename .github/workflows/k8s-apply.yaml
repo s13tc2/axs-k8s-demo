@@ -280,13 +280,31 @@ jobs:
         run: |
           kubectl get events -A --sort-by='.lastTimestamp'
 
-      - name: Test Connectivity to fleet-portal-service
-        run: |
-          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-portal-service.${{ steps.apply.outputs.k8s_namespace }}.svc.cluster.local:80"
-
+      # Test Connectivity to Services
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-api-service.${{ steps.apply.outputs.k8s_namespace }}.svc.cluster.local:80"
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-api-service.app.svc.cluster.local:80/api" || exit 1
+
+      - name: Test Connectivity to fleet-portal-service
+        run: |
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-portal-service.app.svc.cluster.local:80" || exit 1
+
+      # Additional Checks and Logs
+
+      - name: Get Events
+        run: |
+          kubectl get events -n ${{ steps.Apply.outputs.k8s_namespace }} --sort-by='.lastTimestamp'
+
+      - name: Get Application Pod Logs
+        run: |
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-portal -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for fleet-portal pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+          done
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-api -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for fleet-api pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+          done
 
 
 
