@@ -179,9 +179,25 @@ jobs:
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
 
+      - name: Ensure fleet-api Pods are Running
+        run: |
+          kubectl get pods -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+
+      - name: Ensure fleet-portal Pods are Running
+        run: |
+          kubectl get pods -l app=fleet-portal -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+
       - name: Get Services
         run: |
           kubectl get services -n ${{ steps.Apply.outputs.k8s_namespace }}
+      
+      - name: Validate fleet-api Service Endpoints
+        run: |
+          kubectl get endpoints fleet-api-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+
+      - name: Validate fleet-portal Service Endpoints
+        run: |
+          kubectl get endpoints fleet-portal-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
 
       - name: Get Endpoints
         run: |
@@ -208,6 +224,18 @@ jobs:
       - name: Verify IngressClass Controller
         run: |
           kubectl get ingressclass nginx -o yaml
+
+      - name: Test Connectivity to fleet-api-service
+        run: |
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod --force --grace-period=0
+
+      - name: Test Connectivity to fleet-portal-service
+        run: |
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
+          kubectl delete pod test-pod --force --grace-period=0
 
       # - name: List All ClusterRoles
       #   run: |
