@@ -240,7 +240,7 @@ jobs:
 
       - name: Check Ingress Controller ServiceAccount
         run: |
-          kubectl get serviceaccount ingress-nginx -n ingress-nginx -o yaml
+          kubectl get serviceaccount ingress-nginx-controller -n ingress-nginx -o yaml
 
       - name: Describe ClusterRoleBinding for ServiceAccount
         run: |
