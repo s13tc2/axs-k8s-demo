@@ -110,6 +110,12 @@ jobs:
           
         terraform apply -auto-approve
 
+        echo "Planning Terraform changes..."
+        terraform plan -out=tfplan
+        
+        echo "Applying Terraform changes..."
+        terraform apply tfplan
+
     - name: Setup eksctl
       run: |
         # Set ARCH to the appropriate value if running on a different architecture
