@@ -235,7 +235,7 @@ jobs:
 
       - name: Check Ingress Controller ServiceAccount
         run: |
-          kubectl get serviceaccount ingress-nginx -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -o yaml
+          kubectl get serviceaccount ingress-nginx -n ${{ steps.apply.outputs.ingress_controller_namespace }} -o yaml
 
       - name: Describe ClusterRoleBinding for ServiceAccount
         run: |
@@ -243,35 +243,35 @@ jobs:
 
       - name: Get Nginx Ingress Controller Pods and Labels
         run: |
-          kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }} --show-labels
+          kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} --show-labels
 
       - name: Get Nginx Ingress Controller Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
+            kubectl logs $pod -n ${{ steps.apply.outputs.ingress_controller_namespace }}
           done
 
       - name: Check Ingress Controller Logs for Errors
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
             echo "Errors and Warnings in Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.ingress_controller_namespace }} | grep -i "error\|warning"
+            kubectl logs $pod -n ${{ steps.apply.outputs.ingress_controller_namespace }} | grep -i "error\|warning"
           done
 
       - name: Validate Endpoints After Changes
         run: |
-          kubectl get endpoints -n ${{ steps.Apply.outputs.k8s_namespace }}
+          kubectl get endpoints -n ${{ steps.apply.outputs.k8s_namespace }}
 
       - name: Get Application Pod Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-portal -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -l app=fleet-portal -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for fleet-portal pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+            kubectl logs $pod -n ${{ steps.apply.outputs.k8s_namespace }}
           done
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-api -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -l app=fleet-api -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for fleet-api pod: $pod"
-            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+            kubectl logs $pod -n ${{ steps.apply.outputs.k8s_namespace }}
           done
 
       - name: Get Network Policies
@@ -284,11 +284,11 @@ jobs:
 
       - name: Test Connectivity to fleet-portal-service
         run: |
-          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80"
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-portal-service.${{ steps.apply.outputs.k8s_namespace }}.svc.cluster.local:80"
 
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80"
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-api-service.${{ steps.apply.outputs.k8s_namespace }}.svc.cluster.local:80"
 
 
 
