@@ -86,12 +86,23 @@ jobs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
+    
+    - id: debug-outputs
+        name: Debug Outputs
+        run: |
+          echo "Debug: Checking received outputs"
+          echo "Cluster Name: ${{ needs.infra.outputs.kubernetes_cluster_name }}"
+          echo "Region: ${{ needs.infra.outputs.primary_region }}"
+          echo "ALB Role: ${{ needs.infra.outputs.alb_controller_role }}"
+          echo "Workload Role: ${{ needs.infra.outputs.workload_identity_role }}"
 
     - id: Apply
       name: Terraform Apply
       env:
         AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ vars.BUCKET_REGION }}  # Set default region from bucket
+        AWS_DEFAULT_REGION: ${{ vars.BUCKET_REGION }}  # Set default region from bucket
         BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
         BACKEND_REGION: ${{ vars.BUCKET_REGION }}
         BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
@@ -101,6 +112,8 @@ jobs:
         TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
         TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
         TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
+        TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+        TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
       working-directory: ./src/terraform/k8s
       run: |
         terraform init \
