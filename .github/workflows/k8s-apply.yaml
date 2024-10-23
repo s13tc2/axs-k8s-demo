@@ -280,14 +280,18 @@ jobs:
         run: |
           kubectl get events -A --sort-by='.lastTimestamp'
 
-      # Test Connectivity to Services
       - name: Test Connectivity to fleet-api-service
         run: |
-          kubectl run test-pod --rm --image=busybox --restart=Never -- /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod
 
       - name: Test Connectivity to fleet-portal-service
         run: |
-          kubectl run test-pod --rm --image=busybox --restart=Never -- /bin/sh -c "wget -S -O - http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
+          kubectl delete pod test-pod
+
 
       # Additional Checks and Logs
       - name: Get Events
