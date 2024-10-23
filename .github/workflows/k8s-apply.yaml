@@ -232,6 +232,11 @@ jobs:
       - name: Describe ClusterRoleBinding
         run: |
           kubectl describe clusterrolebinding ingress-nginx-controller
+      
+      # Step to list all ServiceAccounts in the ingress-nginx namespace
+      - name: List All ServiceAccounts in ingress-nginx Namespace
+        run: |
+          kubectl get serviceaccounts -n ingress-nginx
 
       - name: Check Ingress Controller ServiceAccount
         run: |
