@@ -27,50 +27,50 @@ jobs:
       name: ${{ inputs.environment }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - id: setup
-      name: Setup `terraform`
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-    - id: apply
-      name: Terraform Apply
-      env:
-        AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
-        BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-        BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
-      working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
-      run: |
-        terraform init \
-          -backend-config='bucket='$BACKEND_BUCKET_NAME \
-          -backend-config='region='$BACKEND_REGION \
-          -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
+      - id: apply
+        name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
+        working-directory: ${{ vars.TERRAFORM_WORKING_DIRECTORY }}
+        run: |
+          terraform init \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}"
 
-        terraform apply -target "random_shuffle.az" -auto-approve
-        terraform apply -auto-approve
+          terraform apply -target "random_shuffle.az" -auto-approve
+          terraform apply -auto-approve
 
-        kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
-        echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
+          kubernetes_cluster_name=$(terraform output -raw kubernetes_cluster_name)
+          echo "kubernetes_cluster_name=$kubernetes_cluster_name" >> "$GITHUB_OUTPUT"
 
-        primary_region=$(terraform output -raw primary_region)
-        echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
+          primary_region=$(terraform output -raw primary_region)
+          echo "primary_region=$primary_region" >> "$GITHUB_OUTPUT"
 
-        console_role=$(terraform output -raw console_role_arn)
-        echo "console_role=$console_role" >> "$GITHUB_OUTPUT"
+          console_role=$(terraform output -raw console_role_arn)
+          echo "console_role=$console_role" >> "$GITHUB_OUTPUT"
 
-        alb_controller_role=$(terraform output -raw alb_controller_role)
-        echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
+          alb_controller_role=$(terraform output -raw alb_controller_role)
+          echo "alb_controller_role=$alb_controller_role" >> "$GITHUB_OUTPUT"
 
-        workload_identity_role=$(terraform output -raw workload_identity_role)
-        echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
+          workload_identity_role=$(terraform output -raw workload_identity_role)
+          echo "workload_identity_role=$workload_identity_role" >> "$GITHUB_OUTPUT"
 
-        admin_group=$(terraform output -raw admin_group_arn)
-        echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
-        
+          admin_group=$(terraform output -raw admin_group_arn)
+          echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
+          
   k8s:
     runs-on: ubuntu-latest
     needs: infra
@@ -79,85 +79,127 @@ jobs:
       name: ${{ inputs.environment }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - id: setup
-      name: Setup `terraform`
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TERRAFORM_VERSION }}
+      - id: setup
+        name: Setup `terraform`
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
-    - id: Apply
-      name: Terraform Apply
-      env:
-        AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ vars.BUCKET_REGION }}  # Set default region from bucket
-        AWS_DEFAULT_REGION: ${{ vars.BUCKET_REGION }}  # Set default region from bucket
-        BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
-        BACKEND_REGION: ${{ vars.BUCKET_REGION }}
-        BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}
-        TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
-        TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
-        TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
-        TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
-        TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
-        TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
-        TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
-        TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
-      working-directory: ./src/terraform/k8s
-      run: |
-        terraform init \
-          -backend-config='bucket='$BACKEND_BUCKET_NAME \
-          -backend-config='region='$BACKEND_REGION \
-          -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
-          
-        terraform apply -auto-approve
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
 
-    - name: Setup eksctl
-      run: |
-        # Set ARCH to the appropriate value if running on a different architecture
-        ARCH=amd64
-        PLATFORM=$(uname -s)_$ARCH
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.infra.outputs.primary_region }}
 
-        # Download eksctl
-        curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+      - name: Update kubeconfig for EKS Cluster
+        run: |
+          aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-        # Optionally verify checksum
-        curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+          chmod +x get_helm.sh
+          ./get_helm.sh
+          helm version
 
-        # Extract and move to a location in PATH
-        tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp
-        sudo mv /tmp/eksctl /usr/local/bin
-        rm eksctl_$PLATFORM.tar.gz
+      - name: Add Helm Repositories
+        run: |
+          helm repo add secrets-store-csi-driver https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts
+          helm repo add aws-secrets-store https://aws.github.io/secrets-store-csi-driver-provider-aws
+          helm repo update
 
-        # Verify installation
-        eksctl version
+      - name: Install/Upgrade Secrets Store CSI Driver
+        run: |
+          helm upgrade --install csi-secrets-store secrets-store-csi-driver/secrets-store-csi-driver \
+            --namespace kube-system \
+            --create-namespace \
+            --set syncSecret.enabled=true \
+            --set installCRDs=true
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ needs.infra.outputs.primary_region }}
+      - name: Install/Upgrade AWS Secrets Provider
+        run: |
+          helm upgrade --install secrets-provider-aws aws-secrets-store/secrets-store-csi-driver-provider-aws \
+            --namespace kube-system
 
-    - name: Test eksctl command
-      run: |
-        eksctl get clusters
-        eksctl get iamidentitymapping \
-          --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
-          --region=${{ needs.infra.outputs.primary_region }}
+      - name: Wait for CRDs to be Established
+        run: |
+          kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
+          kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
 
-        eksctl create iamidentitymapping \
-          --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
-          --region=${{ needs.infra.outputs.primary_region }} \
-          --arn ${{ needs.infra.outputs.console_role }} \
-          --group eks-console-dashboard-full-access-group \
-          --no-duplicate-arns
+      - id: Apply
+        name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ needs.infra.outputs.primary_region }}
+          AWS_DEFAULT_REGION: ${{ needs.infra.outputs.primary_region }}
+          BACKEND_BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+          BACKEND_REGION: ${{ vars.BUCKET_REGION }}
+          BACKEND_KEY: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s
+          TF_VAR_application_name: ${{ vars.APPLICATION_NAME }}
+          TF_VAR_environment_name: ${{ vars.ENVIRONMENT_NAME }}
+          TF_VAR_cluster_name: ${{ needs.infra.outputs.kubernetes_cluster_name }}
+          TF_VAR_primary_region: ${{ needs.infra.outputs.primary_region }}
+          TF_VAR_alb_controller_role: ${{ needs.infra.outputs.alb_controller_role }}
+          TF_VAR_workload_identity_role: ${{ needs.infra.outputs.workload_identity_role }}
+          TF_VAR_secret_name: ${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-connection-string
+          TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
+        working-directory: ./src/terraform/k8s
+        run: |
+          terraform init \
+            -backend-config='bucket='$BACKEND_BUCKET_NAME \
+            -backend-config='region='$BACKEND_REGION \
+            -backend-config="key=${{ vars.APPLICATION_NAME }}-${{ vars.ENVIRONMENT_NAME }}-k8s"
+            
+          terraform apply -auto-approve
 
-        eksctl create iamidentitymapping \
-          --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
-          --region=${{ needs.infra.outputs.primary_region }} \
-          --arn arn:aws:iam::312344499806:user/markti \
-          --group eks-console-dashboard-restricted-access-group \
-          --no-duplicate-arns
+      - name: Setup eksctl
+        run: |
+          # Set ARCH to the appropriate value if running on a different architecture
+          ARCH=amd64
+          PLATFORM=$(uname -s)_$ARCH
+
+          # Download eksctl
+          curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+
+          # Optionally verify checksum
+          curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+          # Extract and move to a location in PATH
+          tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
+          rm eksctl_$PLATFORM.tar.gz
+
+          # Verify installation
+          eksctl version
+
+      - name: Test eksctl command
+        run: |
+          eksctl get clusters
+          eksctl get iamidentitymapping \
+            --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
+            --region=${{ needs.infra.outputs.primary_region }}
+
+          eksctl create iamidentitymapping \
+            --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
+            --region=${{ needs.infra.outputs.primary_region }} \
+            --arn ${{ needs.infra.outputs.console_role }} \
+            --group eks-console-dashboard-full-access-group \
+            --no-duplicate-arns
+
+          eksctl create iamidentitymapping \
+            --cluster ${{ needs.infra.outputs.kubernetes_cluster_name }} \
+            --region=${{ needs.infra.outputs.primary_region }} \
+            --arn arn:aws:iam::312344499806:user/markti \
+            --group eks-console-dashboard-restricted-access-group \
+            --no-duplicate-arns
