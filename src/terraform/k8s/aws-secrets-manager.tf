@@ -1,36 +1,44 @@
-# resource "helm_release" "csi_secrets_store" {
+resource "helm_release" "csi_secrets_store" {
+  name       = "csi-secrets-store"
+  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  chart      = "secrets-store-csi-driver"
+  namespace  = "kube-system"
 
-#   name       = "csi-secrets-store"
-#   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
-#   chart      = "secrets-store-csi-driver"
-#   namespace  = "kube-system"
+  set {
+    name  = "syncSecret.enabled"
+    value = "true"
+  }
 
-#   set {
-#     name  = "syncSecret.enabled"
-#     value = "true"
-#   }
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+}
 
-#   set {
-#     name  = "installCRDs"
-#     value = "true"
-#   }
+resource "helm_release" "aws_secrets_provider" {
+  name       = "secrets-provider-aws"
+  repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
+  chart      = "secrets-store-csi-driver-provider-aws"
+  namespace  = "kube-system"
 
-# }
-
-
-# resource "helm_release" "aws_secrets_provider" {
-
-#   name       = "secrets-provider-aws"
-#   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
-#   chart      = "secrets-store-csi-driver-provider-aws"
-#   namespace  = "kube-system"
-
+  depends_on = [helm_release.csi_secrets_store]
 }
 
 locals {
   secrets = {
     "fleet-portal-dev-connection-string" = "DB_CONNECTION_STRING"
   }
+}
+
+resource "null_resource" "wait_for_crds" {
+  provisioner "local-exec" {
+    command = "kubectl wait --for=condition=established crd/secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s"
+  }
+
+  depends_on = [
+    helm_release.csi_secrets_store,
+    helm_release.aws_secrets_provider
+  ]
 }
 
 resource "kubernetes_manifest" "secret_provider_class" {
@@ -66,4 +74,8 @@ resource "kubernetes_manifest" "secret_provider_class" {
       ]
     }
   }
+
+  depends_on = [
+    null_resource.wait_for_crds
+  ]
 }
