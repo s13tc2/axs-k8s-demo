@@ -174,7 +174,6 @@ jobs:
           k8s_namespace=$(terraform output -raw k8s_namespace)
           echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
 
-      # Debugging Steps Start Here
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
@@ -205,13 +204,33 @@ jobs:
         run: |
           kubectl describe ingressclass nginx
 
+      - name: Verify IngressClass Controller
+        run: |
+          kubectl get ingressclass nginx -o yaml
+
       - name: Get Cluster Roles
         run: |
           kubectl get clusterrole ingress-nginx -o yaml
 
+      - name: Describe ClusterRole
+        run: |
+          kubectl describe clusterrole ingress-nginx
+
       - name: Get Cluster Role Bindings
         run: |
           kubectl get clusterrolebinding ingress-nginx -o yaml
+
+      - name: Describe ClusterRoleBinding
+        run: |
+          kubectl describe clusterrolebinding ingress-nginx
+
+      - name: Check Ingress Controller ServiceAccount
+        run: |
+          kubectl get serviceaccount ingress-nginx -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -o yaml
+
+      - name: Describe ClusterRoleBinding for ServiceAccount
+        run: |
+          kubectl describe clusterrolebinding ingress-nginx
 
       - name: Get Nginx Ingress Controller Deployment
         run: |
@@ -220,6 +239,10 @@ jobs:
       - name: Describe Nginx Ingress Controller Deployment
         run: |
           kubectl describe deployment ingress-nginx-controller -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
+
+      - name: Check Ingress Controller Deployment Arguments
+        run: |
+          kubectl -n ${{ steps.Apply.outputs.ingress_controller_namespace }} get deployment ingress-nginx-controller -o yaml
 
       - name: Get Network Policies
         run: |
@@ -231,8 +254,13 @@ jobs:
 
       - name: Get Application Pod Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=your-app-label -o jsonpath='{.items[*].metadata.name}'); do
-            echo "Logs for pod: $pod"
+          # Replace 'your-app-label' with the actual labels used in your pods
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-portal -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for fleet-portal pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
+          done
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -l app=fleet-api -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Logs for fleet-api pod: $pod"
             kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
           done
 
@@ -246,6 +274,25 @@ jobs:
             echo "Logs for Nginx Ingress Controller pod: $pod"
             kubectl logs $pod -n ${{ steps.Apply.outputs.ingress_controller_namespace }}
           done
+
+      - name: Check Ingress Controller Logs for Errors
+        run: |
+          for pod in $(kubectl get pods -n ${{ steps.Apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/component=controller -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Errors and Warnings in Nginx Ingress Controller pod: $pod"
+            kubectl logs $pod -n ${{ steps.Apply.outputs.ingress_controller_namespace }} | grep -i "error\|warning"
+          done
+
+      - name: Validate Endpoints After Changes
+        run: |
+          kubectl get endpoints -n ${{ steps.Apply.outputs.k8s_namespace }}
+
+      - name: Test Connectivity to fleet-portal-service
+        run: |
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-portal-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80"
+
+      - name: Test Connectivity to fleet-api-service
+        run: |
+          kubectl run test-pod --rm -i --tty --image=busybox --restart=Never -- /bin/sh -c "wget -qO- http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80"
 
 
       - name: Setup eksctl

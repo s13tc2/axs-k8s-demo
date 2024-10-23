@@ -31,11 +31,11 @@ resource "helm_release" "ingress" {
     value = "nginx"
   }
   set {
-    name  = "ingressClass"
-    value = "nginx"
+    name  = "ingressClassResource.controllerValue"
+    value = "nginx.org/ingress-controller"
   }
   set {
-    name  = "controller.publishService.enabled"
-    value = "true"
+    name  = "ingressClass"
+    value = "nginx"
   }
 }
