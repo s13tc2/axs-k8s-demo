@@ -13,6 +13,9 @@ resource "helm_release" "csi_secrets_store" {
     name  = "installCRDs"
     value = "true"
   }
+
+  wait    = true
+  timeout = 300  # Wait up to 300 seconds
 }
 
 resource "helm_release" "aws_secrets_provider" {
@@ -22,23 +25,15 @@ resource "helm_release" "aws_secrets_provider" {
   namespace  = "kube-system"
 
   depends_on = [helm_release.csi_secrets_store]
+
+  wait    = true
+  timeout = 300  # Wait up to 300 seconds
 }
 
 locals {
   secrets = {
     "fleet-portal-dev-connection-string" = "DB_CONNECTION_STRING"
   }
-}
-
-resource "null_resource" "wait_for_crds" {
-  provisioner "local-exec" {
-    command = "kubectl wait --for=condition=established crd/secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s"
-  }
-
-  depends_on = [
-    helm_release.csi_secrets_store,
-    helm_release.aws_secrets_provider
-  ]
 }
 
 resource "kubernetes_manifest" "secret_provider_class" {
@@ -76,6 +71,6 @@ resource "kubernetes_manifest" "secret_provider_class" {
   }
 
   depends_on = [
-    null_resource.wait_for_crds
+    helm_release.aws_secrets_provider
   ]
 }
