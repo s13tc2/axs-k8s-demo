@@ -4,9 +4,9 @@ k8s_namespace            = "app"
 k8s_service_account_name = "fleet-portal"
 web_app_image = {
   name    = "ecr-fleet-portal-dev-frontend"
-  version = "2024.10.2"
+  version = "2024.10.3"
 }
 web_api_image = {
   name    = "ecr-fleet-portal-dev-backend"
-  version = "2024.10.13"
+  version = "2024.10.14"
 }
