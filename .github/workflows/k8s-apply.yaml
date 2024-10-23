@@ -225,6 +225,39 @@ jobs:
         run: |
           kubectl get ingressclass nginx -o yaml
 
+      # Check if the fleet-api service logs show errors or any related information for the /api endpoint
+      - name: Check fleet-api Logs for Errors
+        run: |
+          kubectl logs -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+
+      # Test if the /api endpoint is correctly handled by the application inside the fleet-api pods
+      - name: Test /api Endpoint Directly in fleet-api Pods
+        run: |
+          for pod in $(kubectl get pods -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Testing /api endpoint inside pod: $pod"
+            kubectl exec -it $pod -n ${{ steps.Apply.outputs.k8s_namespace }} -- curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api || exit 1
+          done
+
+      # Ensure the fleet-api service endpoints are correctly mapped
+      - name: Check fleet-api Service Endpoints
+        run: |
+          kubectl get endpoints fleet-api-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
+
+      # Test the root endpoint (/) for fleet-api-service
+      - name: Test Root Endpoint for fleet-api-service
+        run: |
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
+          kubectl delete pod test-pod --force --grace-period=0 || exit 1
+
+      # Verify the fleet-api service can serve the /api endpoint through the ingress
+      - name: Test /api Endpoint for fleet-api-service
+        run: |
+          kubectl run test-pod --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod --force --grace-period=0 || exit 1
+
+
       - name: Test Connectivity to fleet-api-service
         run: |
           kubectl run test-pod --image=busybox --restart=Never -- sleep 300
