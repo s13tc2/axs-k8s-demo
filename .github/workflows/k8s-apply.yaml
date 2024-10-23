@@ -235,7 +235,7 @@ jobs:
 
       - name: Check Ingress Controller ServiceAccount
         run: |
-          kubectl get serviceaccount ingress-nginx -n ${{ steps.apply.outputs.ingress_controller_namespace }} -o yaml
+          kubectl get serviceaccount ingress-nginx -n ${{ steps.apply.outputs.k8s_namespace }} -o yaml
 
       - name: Describe ClusterRoleBinding for ServiceAccount
         run: |
@@ -243,20 +243,20 @@ jobs:
 
       - name: Get Nginx Ingress Controller Pods and Labels
         run: |
-          kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} --show-labels
+          kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} --show-labels
 
       - name: Get Nginx Ingress Controller Logs
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
             echo "Logs for Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ${{ steps.apply.outputs.ingress_controller_namespace }}
+            kubectl logs $pod -n ${{ steps.apply.outputs.k8s_namespace }}
           done
 
       - name: Check Ingress Controller Logs for Errors
         run: |
-          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.ingress_controller_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
+          for pod in $(kubectl get pods -n ${{ steps.apply.outputs.k8s_namespace }} -l app.kubernetes.io/name=nginx-ingress-controller -o jsonpath='{.items[*].metadata.name}'); do
             echo "Errors and Warnings in Nginx Ingress Controller pod: $pod"
-            kubectl logs $pod -n ${{ steps.apply.outputs.ingress_controller_namespace }} | grep -i "error\|warning"
+            kubectl logs $pod -n ${{ steps.apply.outputs.k8s_namespace }} | grep -i "error\|warning"
           done
 
       - name: Validate Endpoints After Changes
