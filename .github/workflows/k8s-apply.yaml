@@ -238,12 +238,20 @@ jobs:
       #       kubectl exec -it $pod -n ${{ steps.Apply.outputs.k8s_namespace }} -- curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api || exit 1
       #     done
 
-      - name: Test /api Endpoint for fleet-api-service from Test Pod
+      - name: Test Connectivity to fleet-api-service
         run: |
+          kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
           kubectl run test-pod --image=busybox --restart=Never -- \
           /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
           kubectl delete pod test-pod --force --grace-period=0 --ignore-not-found=true
 
+
+      - name: Test Connectivity to fleet-api-service
+        run: |
+          TIMESTAMP=$(date +%s)
+          kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
+          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
+          kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
 
       # Ensure the fleet-api service endpoints are correctly mapped
       - name: Check fleet-api Service Endpoints
