@@ -185,18 +185,17 @@ jobs:
           k8s_namespace=$(terraform output -raw k8s_namespace)
           echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
 
+      # Ensure ECR Image is Used
+      - name: Ensure ECR Image is Used
+        run: |
+          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
+          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
+
       # Debugging Steps Start Here
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
       
-      # Add more steps here to apply Kubernetes manifests and ensure ECR authentication
-      # This step ensures the Kubernetes nodes are logged in and can pull images from ECR
-      - name: Ensure ECR Image is Used
-        run: |
-          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
-          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
-
       # Get fleet-api Pods and Check Images
       - name: Get fleet-api Pod Images
         run: |
@@ -217,7 +216,6 @@ jobs:
         run: |
           aws ecr describe-images --repository-name ecr-fleet-portal-dev-frontend --region ${{ needs.infra.outputs.primary_region }} \
           --image-ids imageTag=2024.10.4 || exit 1
-
 
       - name: Ensure fleet-api Pods are Running
         run: |
@@ -270,8 +268,6 @@ jobs:
         run: |
           kubectl logs -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
 
-
-
       - name: Test Connectivity to fleet-api-service
         run: |
           TIMESTAMP=$(date +%s)
@@ -291,8 +287,6 @@ jobs:
           kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
           /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
           kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
-
-
 
       # - name: List All ClusterRoles
       #   run: |
