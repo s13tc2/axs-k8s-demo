@@ -8,5 +8,5 @@ web_app_image = {
 }
 web_api_image = {
   name    = "ecr-fleet-portal-dev-backend"
-  version = "2024.10.15"
+  version = "2024.10.15"  # Use your specific tag
 }
