@@ -15,11 +15,11 @@ output "web_app_image_version" {
 }
 
 output "web_api_image_name" {
-  value = var.web_app_image.name
+  value = var.web_api_image.name
 }
 
 output "web_api_image_version" {
-  value = var.web_app_image.version
+  value = var.web_api_image.version
 }
 
 
