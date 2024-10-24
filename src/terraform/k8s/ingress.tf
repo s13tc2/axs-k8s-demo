@@ -4,7 +4,7 @@ resource "kubernetes_ingress_v1" "ingress" {
     namespace = var.k8s_namespace
     annotations = {
       # You can remove this annotation if `ingressClassName` is set
-      # "kubernetes.io/ingress.class" = "nginx"
+      "kubernetes.io/ingress.class" = "nginx"
     }
   }
   spec {
