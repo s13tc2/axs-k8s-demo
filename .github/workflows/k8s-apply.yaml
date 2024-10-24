@@ -22,6 +22,9 @@ jobs:
       admin_group: ${{ steps.apply.outputs.admin_group }}
       alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
+      web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
+      web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
+      image_version: ${{ steps.apply.outputs.image_version }}
 
     environment:
       name: ${{ inputs.environment }}
@@ -71,6 +74,9 @@ jobs:
           admin_group=$(terraform output -raw admin_group_arn)
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
+          echo "web_api_image_name=$(terraform output -raw web_api_image_name)" >> "$GITHUB_OUTPUT"
+          echo "web_api_image_version=$(terraform output -raw web_api_image_version)" >> "$GITHUB_OUTPUT"
+
   k8s:
     runs-on: ubuntu-latest
     needs: infra
@@ -105,14 +111,12 @@ jobs:
       # **Debug Steps**: Add these to print image details for debugging
       - name: Debug Image Variables
         run: |
-          echo "Registry Endpoint: ${{ steps.apply.outputs.registry_endpoint }}"
-          echo "Image Version: ${{ steps.image-version.outputs.version }}"
+          echo "Image Version: ${{ needs.infra.outputs.image_version }}"
 
-      # **Set ECR Image** for fleet-api and fleet-portal deployments
-      - name: Set ECR Image for fleet-api and fleet-portal
+     - name: Set ECR Image for fleet-api and fleet-portal
         run: |
-          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
-          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+          kubectl set image deployment/fleet-api fleet-api=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
+          kubectl set image deployment/fleet-portal fleet-portal=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
 
       # Debugging Steps to inspect pod status
       - name: Get Pods Status
