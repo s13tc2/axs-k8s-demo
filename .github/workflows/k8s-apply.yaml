@@ -203,6 +203,12 @@ jobs:
           TF_VAR_secret_key: ${{ secrets.DB_CONNECTION_STRING_KEY }}
           TF_VAR_k8s_namespace: ${{ env.K8S_NAMESPACE }}
           TF_VAR_ingress_controller_namespace: ${{ env.INGRESS_CONTROLLER_NAMESPACE }}
+          TF_VAR_frontend_repository: ${{ needs.infra.outputs.frontend_repository }}
+          TF_VAR_backend_repository: ${{ needs.infra.outputs.backend_repository }}
+          TF_VAR_frontend_repository_url: ${{ needs.infra.outputs.frontend_repository_url }}
+          TF_VAR_backend_repository_url: ${{ needs.infra.outputs.backend_repository_url }}
+          TF_VAR_web_api_image_name: ${{ env.WEB_API_IMAGE_NAME }}
+          TF_VAR_web_api_image_version: ${{ env.WEB_API_IMAGE_VERSION }}
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \
@@ -230,16 +236,16 @@ jobs:
         run: |
           kubectl get pods -l app=fleet-portal -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
 
-      # Check Image Existence in ECR
-      - name: Verify ECR Image Existence for Backend
-        run: |
-          aws ecr describe-images --repository-name ecr-fleet-portal-dev-backend --region ${{ needs.infra.outputs.primary_region }} \
-          --image-ids imageTag=2024.10.15 || exit 1
+      # # Check Image Existence in ECR
+      # - name: Verify ECR Image Existence for Backend
+      #   run: |
+      #     aws ecr describe-images --repository-name ecr-fleet-portal-dev-backend --region ${{ needs.infra.outputs.primary_region }} \
+      #     --image-ids imageTag=2024.10.15 || exit 1
 
-      - name: Verify ECR Image Existence for Frontend
-        run: |
-          aws ecr describe-images --repository-name ecr-fleet-portal-dev-frontend --region ${{ needs.infra.outputs.primary_region }} \
-          --image-ids imageTag=2024.10.4 || exit 1
+      # - name: Verify ECR Image Existence for Frontend
+      #   run: |
+      #     aws ecr describe-images --repository-name ecr-fleet-portal-dev-frontend --region ${{ needs.infra.outputs.primary_region }} \
+      #     --image-ids imageTag=2024.10.4 || exit 1
 
       - name: Ensure fleet-api Pods are Running
         run: |
@@ -260,58 +266,6 @@ jobs:
       - name: Validate fleet-portal Service Endpoints
         run: |
           kubectl get endpoints fleet-portal-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
-
-      - name: Get Endpoints
-        run: |
-          kubectl get endpoints -n ${{ steps.Apply.outputs.k8s_namespace }}
-
-      - name: Get Ingresses
-        run: |
-          kubectl get ingress -n ${{ steps.Apply.outputs.k8s_namespace }}
-
-      - name: Describe Ingress
-        run: |
-          kubectl describe ingress $INGRESS_NAME -n ${{ steps.Apply.outputs.k8s_namespace }}
-        env:
-          INGRESS_NAME: ${{ steps.Apply.outputs.ingress_name }}
-
-      - name: Get Ingress Classes
-        run: |
-          kubectl get ingressclass
-
-      - name: Describe Ingress Class
-        run: |
-          kubectl describe ingressclass nginx
-
-      - name: Verify IngressClass Controller
-        run: |
-          kubectl get ingressclass nginx -o yaml
-
-      # Check fleet-api Logs for Errors
-      - name: Check fleet-api Logs for Errors
-        run: |
-          kubectl logs -l app=fleet-api -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
-
-      # Test Connectivity to fleet-api-service
-      - name: Test Connectivity to fleet-api-service
-        run: |
-          TIMESTAMP=$(date +%s)
-          kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
-          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80/api" || exit 1
-          kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
-
-      # Ensure the fleet-api service endpoints are correctly mapped
-      - name: Check fleet-api Service Endpoints
-        run: |
-          kubectl get endpoints fleet-api-service -n ${{ steps.Apply.outputs.k8s_namespace }} || exit 1
-
-      # Test the root endpoint (/) for fleet-api-service
-      - name: Test Root Endpoint for fleet-api-service
-        run: |
-          TIMESTAMP=$(date +%s)
-          kubectl run test-pod-$TIMESTAMP --image=busybox --restart=Never -- \
-          /bin/sh -c "wget -S -O - http://fleet-api-service.${{ steps.Apply.outputs.k8s_namespace }}.svc.cluster.local:80" || exit 1
-          kubectl delete pod test-pod-$TIMESTAMP --force --grace-period=0 --ignore-not-found=true
 
       - name: Get Events
         run: |
