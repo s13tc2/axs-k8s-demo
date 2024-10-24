@@ -102,6 +102,33 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
+      # **Debug Steps**: Add these to print image details for debugging
+      - name: Debug Image Variables
+        run: |
+          echo "Registry Endpoint: ${{ steps.apply.outputs.registry_endpoint }}"
+          echo "Image Version: ${{ steps.image-version.outputs.version }}"
+
+      # **Set ECR Image** for fleet-api and fleet-portal deployments
+      - name: Set ECR Image for fleet-api and fleet-portal
+        run: |
+          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+
+      # Debugging Steps to inspect pod status
+      - name: Get Pods Status
+        run: |
+          kubectl get pods -n app -o wide
+
+      # Validate fleet-api and fleet-portal Pods
+      - name: Ensure fleet-api Pods are Running
+        run: |
+          kubectl get pods -l app=fleet-api -n app --field-selector=status.phase=Running || exit 1
+
+      - name: Ensure fleet-portal Pods are Running
+        run: |
+          kubectl get pods -l app=fleet-portal -n app --field-selector=status.phase=Running || exit 1
+
+
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
