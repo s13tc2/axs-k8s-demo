@@ -207,10 +207,10 @@ jobs:
           TF_VAR_backend_repository: ${{ needs.infra.outputs.backend_repository }}
           TF_VAR_frontend_repository_url: ${{ needs.infra.outputs.frontend_repository_url }}
           TF_VAR_backend_repository_url: ${{ needs.infra.outputs.backend_repository_url }}
-          TF_VAR_web_api_image_name: ${{ env.WEB_API_IMAGE_NAME }}
-          TF_VAR_web_api_image_version: ${{ env.WEB_API_IMAGE_VERSION }}
-          TF_VAR_web_app_image_name: ${{ env.WEB_APP_IMAGE_NAME }}
-          TF_VAR_web_app_image_version: ${{ env.WEB_APP_IMAGE_VERSION }}
+          # TF_VAR_web_api_image_name: ${{ env.WEB_API_IMAGE_NAME }}
+          # TF_VAR_web_api_image_version: ${{ env.WEB_API_IMAGE_VERSION }}
+          # TF_VAR_web_app_image_name: ${{ env.WEB_APP_IMAGE_NAME }}
+          # TF_VAR_web_app_image_version: ${{ env.WEB_APP_IMAGE_VERSION }}
         working-directory: ./src/terraform/k8s
         run: |
           terraform init \

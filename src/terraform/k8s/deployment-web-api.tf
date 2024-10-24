@@ -1,4 +1,3 @@
-
 locals {
   web_api_name = "fleet-api"
 }
