@@ -40,7 +40,8 @@ resource "kubernetes_deployment" "web_api" {
         }
 
         container {
-          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_api_image.name}:${var.web_api_image.version}"
+          # image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_api_image.name}:${var.web_api_image.version}"
+          image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-backend:2024.10.15"
           name  = local.web_api_name
 
           port {
