@@ -107,16 +107,10 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Describe ECR Images
-        run: |
-          aws ecr describe-images --repository-name ecr-fleet-portal-dev-backend --region us-west-2 \
-            --query 'imageDetails[*].[imageTags]' --output text
-
       - name: Set ECR Image for fleet-api and fleet-portal
-        if: ${{ steps.apply.outputs.registry_endpoint != '' && steps.image-version.outputs.version != '' }}
         run: |
-          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
-          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+          kubectl set image deployment/fleet-api fleet-api=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-backend -n app
+          kubectl set image deployment/fleet-portal fleet-portal=292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-frontend -n app
 
       # Debugging Steps to inspect pod status
       - name: Get Pods Status
