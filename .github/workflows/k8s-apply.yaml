@@ -147,12 +147,6 @@ jobs:
           kubectl wait --for=condition=established crd secretproviderclasses.secrets-store.csi.x-k8s.io --timeout=120s
           kubectl wait --for=condition=established crd secretproviderclasspodstatuses.secrets-store.csi.x-k8s.io --timeout=120s
 
-      # Ensure that you do NOT uninstall the Helm releases here
-      # - name: Uninstall Existing Helm Releases
-      #   run: |
-      #     helm uninstall csi-secrets-store -n kube-system || true
-      #     helm uninstall secrets-provider-aws -n kube-system || true
-
       - id: Apply
         name: Terraform Apply
         env:
@@ -184,12 +178,6 @@ jobs:
 
           k8s_namespace=$(terraform output -raw k8s_namespace)
           echo "k8s_namespace=$k8s_namespace" >> "$GITHUB_OUTPUT"
-
-      # Ensure ECR Image is Used
-      - name: Ensure ECR Image is Used
-        run: |
-          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
-          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
 
       # Debugging Steps Start Here
       - name: Get Pods Status
@@ -224,6 +212,12 @@ jobs:
       - name: Ensure fleet-portal Pods are Running
         run: |
           kubectl get pods -l app=fleet-portal -n ${{ steps.Apply.outputs.k8s_namespace }} --field-selector=status.phase=Running || exit 1
+
+      # # Ensure ECR Image is Used
+      # - name: Ensure ECR Image is Used
+      #   run: |
+      #     kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
+      #     kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n ${{ steps.Apply.outputs.k8s_namespace }}
 
       - name: Get Services
         run: |
@@ -388,8 +382,6 @@ jobs:
             echo "Logs for fleet-api pod: $pod"
             kubectl logs $pod -n ${{ steps.Apply.outputs.k8s_namespace }}
           done
-
-
 
       - name: Setup eksctl
         run: |
