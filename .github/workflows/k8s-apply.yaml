@@ -16,13 +16,16 @@ jobs:
   infra:
     runs-on: ubuntu-latest
     outputs:
+      frontend_repository: ${{ steps.apply.outputs.frontend_repository }}
+      frontend_repository_url: ${{ steps.apply.outputs.frontend_repository_url }}
+      backend_repository: ${{ steps.apply.outputs.backend_repository }}
+      backend_repository_url: ${{ steps.apply.outputs.backend_repository_url }}
       kubernetes_cluster_name: ${{ steps.apply.outputs.kubernetes_cluster_name }}
       primary_region: ${{ steps.apply.outputs.primary_region }}
       console_role: ${{ steps.apply.outputs.console_role }}
       admin_group: ${{ steps.apply.outputs.admin_group }}
       alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
-      
     environment:
       name: ${{ inputs.environment }}
 
@@ -71,14 +74,20 @@ jobs:
           admin_group=$(terraform output -raw admin_group_arn)
           echo "admin_group=$admin_group" >> "$GITHUB_OUTPUT"
 
-          echo "web_api_image_name=$(terraform output -raw web_api_image_name)" >> "$GITHUB_OUTPUT"
-          echo "web_api_image_version=$(terraform output -raw web_api_image_version)" >> "$GITHUB_OUTPUT"
+          frontend_repository=$(terraform output -raw frontend_repository)
+          echo "frontend_repository=$frontend_repository" >> "$GITHUB_OUTPUT"
+
+          frontend_repository_url=$(terraform output -raw frontend_repository_url)
+          echo "frontend_repository_url=$frontend_repository_url" >> "$GITHUB_OUTPUT"
+
+          backend_repository=$(terraform output -raw backend_repository)
+          echo "backend_repository=$backend_repository" >> "$GITHUB_OUTPUT"
+
+          backend_repository_url=$(terraform output -raw backend_repository_url)
+          echo "backend_repository_url=$backend_repository_url" >> "$GITHUB_OUTPUT"
 
   k8s:
     runs-on: ubuntu-latest
-    outputs: 
-      web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
-      web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
     needs: infra
 
     environment:
@@ -108,13 +117,13 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Get Terraform Outputs
+      # Display frontend and backend repositories
+      - name: Display Frontend and Backend Repositories
         run: |
-          web_api_image_name=$(terraform output -raw web_api_image_name)
-          echo "web_api_image_name=$web_api_image_name" >> "$GITHUB_OUTPUT"
-
-          web_api_image_version=$(terraform output -raw web_api_image_version)
-          echo "web_api_image_version=$web_api_image_version" >> "$GITHUB_OUTPUT"
+          echo "Frontend Repository: ${{ needs.infra.outputs.frontend_repository }}"
+          echo "Frontend Repository URL: ${{ needs.infra.outputs.frontend_repository_url }}"
+          echo "Backend Repository: ${{ needs.infra.outputs.backend_repository }}"
+          echo "Backend Repository URL: ${{ needs.infra.outputs.backend_repository_url }}"
 
       # - name: Set ECR Image for fleet-api and fleet-portal
       #   run: |
