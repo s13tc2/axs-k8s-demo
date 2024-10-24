@@ -87,12 +87,23 @@ jobs:
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ needs.infra.outputs.primary_region }}
+
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.infra.outputs.primary_region }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Update kubeconfig for EKS Cluster
         run: |
@@ -178,6 +189,13 @@ jobs:
       - name: Get Pods Status
         run: |
           kubectl get pods -n ${{ steps.Apply.outputs.k8s_namespace }} -o wide
+      
+      # Add more steps here to apply Kubernetes manifests and ensure ECR authentication
+      # This step ensures the Kubernetes nodes are logged in and can pull images from ECR
+      - name: Ensure ECR Image is Used
+        run: |
+          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
 
       # Get fleet-api Pods and Check Images
       - name: Get fleet-api Pod Images
@@ -188,11 +206,6 @@ jobs:
       - name: Get fleet-portal Pod Images
         run: |
           kubectl get pods -l app=fleet-portal -n ${{ steps.Apply.outputs.k8s_namespace }} -o=jsonpath="{.items[*].spec.containers[*].image}"
-
-      # Add ECR Login Check
-      - name: Verify ECR Login
-        run: |
-          aws ecr get-login-password --region ${{ needs.infra.outputs.primary_region }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
 
       # Check Image Existence in ECR
       - name: Verify ECR Image Existence for Backend
