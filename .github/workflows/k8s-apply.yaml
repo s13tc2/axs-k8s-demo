@@ -107,10 +107,17 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      - name: Set ECR Image for fleet-api and fleet-portal
+      # Add a step to output the values of registry_endpoint and image-version
+      - name: Debug Terraform Outputs
         run: |
-          kubectl set image deployment/fleet-api fleet-api=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
-          kubectl set image deployment/fleet-portal fleet-portal=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
+          echo "Registry Endpoint: ${{ steps.apply.outputs.registry_endpoint }}"
+          echo "Image Version: ${{ steps.image-version.outputs.version }}"
+
+      - name: Set ECR Image for fleet-api and fleet-portal
+        if: ${{ steps.apply.outputs.registry_endpoint != '' && steps.image-version.outputs.version != '' }}
+        run: |
+          kubectl set image deployment/fleet-api fleet-api=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
+          kubectl set image deployment/fleet-portal fleet-portal=${{ steps.apply.outputs.registry_endpoint }}:${{ steps.image-version.outputs.version }} -n app
 
       # Debugging Steps to inspect pod status
       - name: Get Pods Status
