@@ -107,6 +107,11 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
+      - name: Set ECR Image for fleet-api and fleet-portal
+        run: |
+          kubectl set image deployment/fleet-api fleet-api=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
+          kubectl set image deployment/fleet-portal fleet-portal=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
+
       # Debugging Steps to inspect pod status
       - name: Get Pods Status
         run: |
