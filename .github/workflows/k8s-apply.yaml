@@ -22,8 +22,6 @@ jobs:
       admin_group: ${{ steps.apply.outputs.admin_group }}
       alb_controller_role: ${{ steps.apply.outputs.alb_controller_role }}
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
-      web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
-      web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
       
     environment:
       name: ${{ inputs.environment }}
@@ -78,6 +76,9 @@ jobs:
 
   k8s:
     runs-on: ubuntu-latest
+    outputs: 
+      web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
+      web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
     needs: infra
 
     environment:
@@ -106,6 +107,14 @@ jobs:
       - name: Update kubeconfig for EKS Cluster
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
+
+      - name: Get Terraform Outputs
+        run: |
+          web_api_image_name=$(terraform output -raw web_api_image_name)
+          echo "web_api_image_name=$web_api_image_name" >> "$GITHUB_OUTPUT"
+
+          web_api_image_version=$(terraform output -raw web_api_image_version)
+          echo "web_api_image_version=$web_api_image_version" >> "$GITHUB_OUTPUT"
 
       # - name: Set ECR Image for fleet-api and fleet-portal
       #   run: |
