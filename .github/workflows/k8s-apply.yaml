@@ -24,7 +24,6 @@ jobs:
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
       web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
       web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
-      image_version: ${{ steps.apply.outputs.image_version }}
 
     environment:
       name: ${{ inputs.environment }}
@@ -108,11 +107,6 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      # **Debug Steps**: Add these to print image details for debugging
-      - name: Debug Image Variables
-        run: |
-          echo "Image Version: ${{ needs.infra.outputs.image_version }}"
-
      - name: Set ECR Image for fleet-api and fleet-portal
         run: |
           kubectl set image deployment/fleet-api fleet-api=${{ needs.infra.outputs.web_api_image_name }}:${{ needs.infra.outputs.web_api_image_version }} -n app
@@ -131,7 +125,6 @@ jobs:
       - name: Ensure fleet-portal Pods are Running
         run: |
           kubectl get pods -l app=fleet-portal -n app --field-selector=status.phase=Running || exit 1
-
 
       - name: Install kubectl
         run: |
