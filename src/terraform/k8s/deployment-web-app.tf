@@ -29,8 +29,8 @@ resource "kubernetes_deployment" "web_app" {
         service_account_name = kubernetes_service_account.workload_identity.metadata[0].name
 
         container {
-          image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_app_image.name}:${var.web_app_image.version}"
-          # image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-backend:2024.10.15"
+          # image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.primary_region}.amazonaws.com/${var.web_app_image.name}:${var.web_app_image.version}"
+          image = "292991734662.dkr.ecr.us-west-2.amazonaws.com/ecr-fleet-portal-dev-frontend:2024.10.4"
           name  = local.web_app_name
           port {
             container_port = 5000
