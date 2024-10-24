@@ -1,66 +1,112 @@
 resource "helm_release" "ingress" {
-  name       = "ingress"
-  repository = "https://charts.bitnami.com/bitnami"
-  chart      = "nginx-ingress-controller"
-
+  name             = "ingress"
+  repository       = "https://charts.bitnami.com/bitnami"
+  chart            = "nginx-ingress-controller"
   create_namespace = true
   namespace        = "ingress-nginx"
-
-  # Override the fullname to ensure consistent naming
-  set {
-    name  = "fullnameOverride"
-    value = "ingress-nginx-controller"
-  }
-
-  # Set the service type to LoadBalancer
+  
   set {
     name  = "service.type"
     value = "LoadBalancer"
   }
-
-  # Set service annotations for AWS NLB, with additional options
+  
   set {
     name  = "service.annotations"
-    value = "service.beta.kubernetes.io/aws-load-balancer-type: nlb, service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: '20', service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'"
+    value = "service.beta.kubernetes.io/aws-load-balancer-type: nlb"
   }
-
-  # Enable RBAC creation
+  
+  # Add WebSocket support
   set {
-    name  = "rbac.create"
+    name  = "controller.config.proxy-read-timeout"
+    value = "3600"
+  }
+  
+  set {
+    name  = "controller.config.proxy-send-timeout"
+    value = "3600"
+  }
+  
+  set {
+    name  = "controller.config.proxy-connect-timeout"
+    value = "3600"
+  }
+  
+  set {
+    name  = "controller.config.enable-underscores-in-headers"
+    value = "true"
+  }
+  
+  set {
+    name  = "controller.config.use-forwarded-headers"
+    value = "true"
+  }
+  
+  # Specific for Blazor WebSocket
+  set {
+    name  = "controller.config.proxy-buffer-size"
+    value = "128k"
+  }
+  
+  set {
+    name  = "controller.config.proxy-buffers-number"
+    value = "4"
+  }
+  
+  set {
+    name  = "controller.config.keep-alive"
+    value = "75"
+  }
+  
+  set {
+    name  = "controller.config.upstream-keepalive-timeout"
+    value = "60"
+  }
+  
+  set {
+    name  = "controller.config.upstream-keepalive-requests"
+    value = "100"
+  }
+  
+  # Optional but recommended for better WebSocket performance
+  set {
+    name  = "controller.config.use-gzip"
     value = "true"
   }
 
-  # Ensure the controller watches all namespaces
+  # Add these new configurations for sticky sessions
   set {
-    name  = "controller.scope.enabled"
-    value = "false"
-  }
-
-  # Create and specify the ServiceAccount, using the consistent name
-  set {
-    name  = "controller.serviceAccount.create"
+    name  = "controller.config.use-proxy-protocol"
     value = "true"
   }
-  set {
-    name  = "controller.serviceAccount.name"
-    value = "ingress-nginx-controller"  # Updated to match other references
-  }
 
-  # Enable and configure the IngressClass resource
   set {
-    name  = "ingressClassResource.enabled"
+    name  = "controller.config.enable-sticky-sessions"
     value = "true"
   }
+
   set {
-    name  = "ingressClassResource.name"
-    value = "nginx"
+    name  = "controller.config.upstream-hash-by"
+    value = "$remote_addr"
   }
+
+  # Add SignalR specific configurations
   set {
-    name  = "ingressClassResource.controllerValue"
-    value = "k8s.io/ingress-nginx"
+    name  = "controller.config.map-hash-bucket-size"
+    value = "128"
   }
+
   set {
-    name  = "ingressClass"
-    value = "nginx"
+    name  = "controller.config.worker-connections"
+    value = "10240"
+  }
+
+  set {
+    name  = "controller.config.max-worker-connections"
+    value = "10240"
+  }
+
+  set {
+    name  = "controller.config.worker-processes"
+    value = "auto"
   }
 }

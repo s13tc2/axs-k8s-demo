@@ -3,7 +3,7 @@ output "frontend_repository" {
 }
 
 output "frontend_repository_url" {
-  value = "${aws_ecr_repository.main["frontend"].repository_url}:2024.10.4"
+  value = "${aws_ecr_repository.main["frontend"].repository_url}"
 }
 
 output "backend_repository" {
@@ -11,7 +11,7 @@ output "backend_repository" {
 }
 
 output "backend_repository_url" {
-  value = "${aws_ecr_repository.main["backend"].repository_url}:2024.10.15"
+  value = "${aws_ecr_repository.main["backend"].repository_url}"
 }
 
 output "kubernetes_cluster_name" {

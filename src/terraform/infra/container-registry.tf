@@ -4,7 +4,6 @@ locals {
 }
 
 resource "aws_ecr_repository" "main" {
-
   for_each = local.repositories
 
   name                 = "ecr-${var.application_name}-${var.environment_name}-${each.key}"

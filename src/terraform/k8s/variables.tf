@@ -23,12 +23,14 @@ variable "web_app_image" {
     name    = string
     version = string
   })
+  description = "The frontend app image details"
 }
 variable "web_api_image" {
   type = object({
     name    = string
     version = string
   })
+  description = "The web API image details"
 }
 variable "alb_controller_role" {
   type = string
