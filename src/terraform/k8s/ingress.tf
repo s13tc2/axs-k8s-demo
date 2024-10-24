@@ -4,7 +4,7 @@ resource "kubernetes_ingress_v1" "ingress" {
     namespace = var.k8s_namespace
     annotations = {
       # You can remove this annotation if `ingressClassName` is set
-      "kubernetes.io/ingress.class" = "nginx"
+      # "kubernetes.io/ingress.class" = "nginx"
     }
   }
   spec {
@@ -41,7 +41,7 @@ resource "kubernetes_ingress_v1" "ingress" {
 
   depends_on = [
     kubernetes_service.web_app,
-    # kubernetes_service.web_api,
+    kubernetes_service.web_api,
     helm_release.ingress
   ]
 }

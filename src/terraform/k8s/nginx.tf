@@ -18,10 +18,10 @@ resource "helm_release" "ingress" {
     value = "LoadBalancer"
   }
 
-  # Set service annotations for AWS NLB
+  # Set service annotations for AWS NLB, with additional options
   set {
     name  = "service.annotations"
-    value = "service.beta.kubernetes.io/aws-load-balancer-type: nlb"
+    value = "service.beta.kubernetes.io/aws-load-balancer-type: nlb, service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: '20', service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'"
   }
 
   # Enable RBAC creation
@@ -36,14 +36,14 @@ resource "helm_release" "ingress" {
     value = "false"
   }
 
-  # Create and specify the ServiceAccount
+  # Create and specify the ServiceAccount, using the consistent name
   set {
     name  = "controller.serviceAccount.create"
     value = "true"
   }
   set {
     name  = "controller.serviceAccount.name"
-    value = "ingress-nginx"
+    value = "ingress-nginx-controller"  # Updated to match other references
   }
 
   # Enable and configure the IngressClass resource
@@ -57,7 +57,7 @@ resource "helm_release" "ingress" {
   }
   set {
     name  = "ingressClassResource.controllerValue"
-    value = "k8s.io/ingress-nginx"  # Updated controller value
+    value = "k8s.io/ingress-nginx"
   }
   set {
     name  = "ingressClass"
