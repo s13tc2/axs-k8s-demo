@@ -35,10 +35,6 @@ data "aws_eks_cluster_auth" "main" {
   name = var.cluster_name
 }
 
-data "aws_ecr_repository" "web_api_repository" {
-  name = var.repository_name
-}
-
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.main.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.main.certificate_authority[0].data)

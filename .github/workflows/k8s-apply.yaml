@@ -24,7 +24,6 @@ jobs:
       workload_identity_role: ${{ steps.apply.outputs.workload_identity_role }}
       web_api_image_name: ${{ steps.apply.outputs.web_api_image_name }}
       web_api_image_version: ${{ steps.apply.outputs.web_api_image_version }}
-      registry_endpoint: ${{ steps.apply.outputs.registry_endpoint }}
       
     environment:
       name: ${{ inputs.environment }}
@@ -108,11 +107,10 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ needs.infra.outputs.kubernetes_cluster_name }} --region ${{ needs.infra.outputs.primary_region }}
 
-      # Add a step to output the values of registry_endpoint and image-version
-      - name: Debug Terraform Outputs
+      - name: Describe ECR Images
         run: |
-          echo "Registry Endpoint: ${{ steps.apply.outputs.registry_endpoint }}"
-          echo "Image Version: ${{ steps.apply.outputs.web_api_image_version }}"
+          aws ecr describe-images --repository-name ecr-fleet-portal-dev-backend --region us-west-2 \
+            --query 'imageDetails[*].[imageTags]' --output text
 
       - name: Set ECR Image for fleet-api and fleet-portal
         if: ${{ steps.apply.outputs.registry_endpoint != '' && steps.image-version.outputs.version != '' }}
